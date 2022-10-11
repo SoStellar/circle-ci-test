@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   node: circleci/node@5.0.3
+  orb-deploy: pagely/orb-deploy@1.0.0
 jobs:
   install-and-test:
     executor:
@@ -13,10 +14,41 @@ jobs:
       - run:
           command: npm run test
           name: Run YARN tests
-  # deploy-github-pages:
-  #   steps:
+  deploy-github-pages:
+    steps:deploy:
+    description: Deploy code to a Pagely VPS
+    parameters:
+      app_id:
+        description: Pagely App ID
+        type: string
+      deploy_dest:
+        default: /httpdocs
+        description: Deploy destination
+        type: string
+      working_dir:
+        default: $CIRCLE_WORKING_DIRECTORY
+        description: The directory to deploy from. In most cases this will be the same as the attached workspace
+        type: string
+      attach_workspace:
+        default: $CIRCLE_WORKING_DIRECTORY
+        description: The workspace containing files from previous steps that we want to deploy.
+        type: string
+    docker:
+      - image: pagely/pagely-vps-deploy:1
+    environment:
+      PAGELY_APP_ID: <<parameters.app_id>>
+      PAGELY_DEPLOY_DEST: <<parameters.deploy_dest>>
+      PAGELY_WORKING_DIR: <<parameters.working_dir>>
+    steps:
+      - attach_workspace:
+          at: <<parameters.attach_workspace>>
+      - run:
+          command: |
+            /pipe.sh
+          name: run deploy container
 
 workflows:
   test_my_app:
     jobs:
       - install-and-test
+      - deploy-github-pages
