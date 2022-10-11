@@ -14,7 +14,7 @@ jobs:
       - run:
           command: npm run test
           name: Run YARN tests
-  deploy-github-pages:
+  deploy-github-pages1:
     steps:deploy:
     description: Deploy code to a Pagely VPS
     parameters:
@@ -51,4 +51,4 @@ workflows:
   test_my_app:
     jobs:
       - install-and-test
-      - deploy-github-pages
+      - deploy-github-pages1
