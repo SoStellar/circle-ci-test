@@ -9,7 +9,7 @@ jobs:
       tag: "16.17"
     steps:
       - checkout
-      - node/install-packages:
+      - node/install-packages
       - run:
           command: npm run test
           name: Run YARN tests
