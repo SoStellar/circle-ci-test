@@ -20,7 +20,7 @@ jobs:
       - node/install-packages
       - run:
           name: Test << pipeline.git.branch >>
-          command: yarn run test
+          command: npm run test
   deploy:
     executor:
       name: node/default
