@@ -2,53 +2,51 @@ version: 2.1
 
 orbs:
   node: circleci/node@5.0.3
-  orb-deploy: pagely/orb-deploy@1.0.0
+
 jobs:
-  install-and-test:
+  test-and-deploy:
     executor:
       name: node/default
       tag: "16.17"
+    environment:
+      REPOURL: << pipeline.project.git_url >>
     steps:
       - checkout
+      - run:
+          name: Setup evironment variables
+          command: |
+            echo "export REPOPATH=${REPOURL#https://github.com}" >> "$BASH_ENV"
       - node/install-packages
       - run:
+          name: Test << pipeline.git.branch >>
           command: npm run test
-          name: Run YARN tests
-  deploy-github-pages1:
-    steps:deploy:
-    description: Deploy code to a Pagely VPS
-    parameters:
-      app_id:
-        description: Pagely App ID
-        type: string
-      deploy_dest:
-        default: /httpdocs
-        description: Deploy destination
-        type: string
-      working_dir:
-        default: $CIRCLE_WORKING_DIRECTORY
-        description: The directory to deploy from. In most cases this will be the same as the attached workspace
-        type: string
-      attach_workspace:
-        default: $CIRCLE_WORKING_DIRECTORY
-        description: The workspace containing files from previous steps that we want to deploy.
-        type: string
-    docker:
-      - image: pagely/pagely-vps-deploy:1
-    environment:
-      PAGELY_APP_ID: <<parameters.app_id>>
-      PAGELY_DEPLOY_DEST: <<parameters.deploy_dest>>
-      PAGELY_WORKING_DIR: <<parameters.working_dir>>
-    steps:
-      - attach_workspace:
-          at: <<parameters.attach_workspace>>
+
       - run:
+          name: Setup git user
           command: |
-            /pipe.sh
-          name: run deploy container
+            git config --global user.email "githubpkaddress@gmail.com"
+            git config --global user.name "Peerawit Khernpratiyut"
+      - run:
+          name: Build << pipeline.git.branch >>
+          command: PUBLIC_URL=/${CIRCLE_PROJECT_REPONAME} npm run build
+      - run:
+          name: Environment variables
+          command: |
+            echo ${CIRCLE_PROJECT_REPONAME}
+            echo ${CIRCLE_REPOSITORY_URL}
+            echo ${REPOURL}
+            echo ${REPOPATH}
+      - run:
+          name: Setup Github token
+          command: |
+            git remote set-url origin https://git:${GITHUB_TOKEN}@github.com${REPOPATH}.git
+      - run:
+          name: Deploy to gh-pages
+          command: npm run deploy
 
 workflows:
-  test_my_app:
+  test_and_deploy_my_app:
     jobs:
-      - install-and-test
-      - deploy-github-pages1
+      - test-and-deploy:
+          context:
+            - github-context
